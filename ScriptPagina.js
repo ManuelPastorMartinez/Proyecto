@@ -1,6 +1,4 @@
-// ===============================
-// CONFIGURACIÓN GOOGLE
-// ===============================
+
 const CLIENT_ID = "116544285744-5t4hsbcaho0hb30g2u3848i3g5ch52mh.apps.googleusercontent.com";
 const API_KEY = "AIzaSyBKF6JikRacCoou0PHQkYVBpnvCXUymIhw";
 const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
@@ -10,10 +8,7 @@ let tokenClient;
 let gapiInited = false;
 let gisInited = false;
 
-// ===============================
-// INICIALIZACIÓN
-// ===============================
-// DESPUÉS — esperamos a que GAPI esté listo antes de pedir eventos
+
 window.onload = () => {
     gapi.load("client", async () => {
         await gapi.client.init({
@@ -23,7 +18,7 @@ window.onload = () => {
         gapiInited = true;
         console.log("GAPI listo");
 
-        // GIS se inicializa DENTRO, cuando GAPI ya está listo
+       
         tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
             scope: SCOPES,
@@ -36,7 +31,7 @@ window.onload = () => {
                 document.getElementById("btn-logout").style.display = "inline-block";
                 document.getElementById("calendar-content").style.display = "block";
 
-                // Pequeña espera para asegurar que el token está activo
+                
                 await new Promise(r => setTimeout(r, 300));
                 obtenerEventos();
             },
@@ -45,9 +40,7 @@ window.onload = () => {
         console.log("GIS listo");
     });
 };
-// ===============================
-// LOGIN / LOGOUT
-// ===============================
+
 document.getElementById("btn-login").onclick = () => {
     if (!tokenClient) {
         alert("Google aún se está cargando, espera un momento.");
@@ -70,9 +63,7 @@ document.getElementById("btn-logout").onclick = () => {
     document.getElementById("lista-eventos").innerHTML = "";
 };
 
-// ===============================
-// OBTENER EVENTOS
-// ===============================
+
 async function obtenerEventos() {
     try {
         const response = await gapi.client.calendar.events.list({
@@ -89,7 +80,7 @@ async function obtenerEventos() {
         lista.innerHTML = "";
 
         if (!eventos || eventos.length === 0) {
-            lista.innerHTML = "<p>No tienes reservas próximas.</p>";
+            lista.innerHTML = "<p>No tienes comidas guardadas.</p>";
             return;
         }
 
@@ -116,13 +107,10 @@ async function obtenerEventos() {
 
     } catch (err) {
         console.error("Error al obtener eventos:", err);
-        alert("Error al cargar tus reservas. Intenta de nuevo.");
+        alert("Error al cargar tus comidas. Intenta de nuevo.");
     }
 }
 
-// ===============================
-// CREAR RESERVA — 4 SEMANAS
-// ===============================
 const TURNOS = {
     desayuno: { inicio: "08:00", fin: "10:00", emoji: "☕" },
     almuerzo: { inicio: "10:30", fin: "12:00", emoji: "🥐" },
@@ -148,7 +136,7 @@ function proximaFecha(diaCode) {
     return fecha;
 }
 
-// Formatea Date como YYYYMMDD para RRULE UNTIL
+
 function formatUntil(date) {
     return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 }
@@ -166,13 +154,13 @@ document.getElementById("btn-reservar").onclick = async () => {
     const { inicio, fin, emoji } = TURNOS[turno];
     const fechaInicio = proximaFecha(diaCode);
     const fechaFin = new Date(fechaInicio);
-    fechaFin.setDate(fechaFin.getDate() + 21); // +3 semanas = 4 ocurrencias
+    fechaFin.setDate(fechaFin.getDate() + 21); 
 
     const fechaStr = fechaInicio.toISOString().split("T")[0];
 
     const evento = {
         summary: `${emoji} ${plato}`,
-        description: `Reserva de: ${plato}\nTurno: ${turno} (${inicio} - ${fin})\nDía: ${DIAS_ES[diaCode]}\nCreada desde Genion`,
+        description: `Guardado de: ${plato}\nTurno: ${turno} (${inicio} - ${fin})\nDía: ${DIAS_ES[diaCode]}\nCreada desde calo-counter`,
         start: {
             dateTime: `${fechaStr}T${inicio}:00`,
             timeZone: "Europe/Madrid",
@@ -192,7 +180,7 @@ document.getElementById("btn-reservar").onclick = async () => {
             resource: evento,
         });
 
-        alert(`✅ Reserva creada: "${plato}" los ${DIAS_ES[diaCode]} durante las próximas 4 semanas.`);
+        alert(`✅ Comida guardada: "${plato}" los ${DIAS_ES[diaCode]} durante las próximas 4 semanas.`);
 
         document.getElementById("reserva-plato").value = "";
         document.getElementById("reserva-dia").value = "";
@@ -201,16 +189,14 @@ document.getElementById("btn-reservar").onclick = async () => {
         obtenerEventos();
 
     } catch (err) {
-        console.error("Error al crear la reserva:", err);
-        alert("Error al crear la reserva. Comprueba que has iniciado sesión.");
+        console.error("Error al guardar la comida:", err);
+        alert("Error al guardar la comida. Comprueba que has iniciado sesión.");
     }
 };
 
-// ===============================
-// CANCELAR TODAS LAS RESERVAS
-// ===============================
+
 document.getElementById("btn-cancelar-todas").onclick = async () => {
-    if (!confirm("¿Seguro que quieres cancelar TODAS tus reservas de las próximas 4 semanas?")) return;
+    if (!confirm("¿Seguro que quieres borrar TODAS tus comidas de las próximas 4 semanas?")) return;
 
     try {
         const response = await gapi.client.calendar.events.list({
@@ -226,11 +212,11 @@ document.getElementById("btn-cancelar-todas").onclick = async () => {
         const eventos = response.result.items;
 
         if (!eventos || eventos.length === 0) {
-            alert("No tienes reservas para cancelar.");
+            alert("No tienes comidas para borrar.");
             return;
         }
 
-        // Borra cada evento; si es recurrente, borra solo esa instancia
+   
         const promesas = eventos.map(ev =>
             gapi.client.calendar.events.delete({
                 calendarId: "primary",
@@ -240,11 +226,11 @@ document.getElementById("btn-cancelar-todas").onclick = async () => {
 
         await Promise.all(promesas);
 
-        alert(`✅ ${eventos.length} reserva(s) canceladas correctamente.`);
+        alert(`✅ ${eventos.length} comida(s) borradas correctamente.`);
         obtenerEventos();
 
     } catch (err) {
         console.error("Error al cancelar:", err);
-        alert("Error al cancelar las reservas. Inténtalo de nuevo.");
+        alert("Error al borrar las comidas. Inténtalo de nuevo.");
     }
 };
